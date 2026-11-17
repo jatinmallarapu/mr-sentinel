@@ -1,0 +1,6 @@
+# Avoid embedding .env files, repository history, and benchmark outputs.
+*
+!pyproject.toml
+!src/
+!src/**
+!config.yaml

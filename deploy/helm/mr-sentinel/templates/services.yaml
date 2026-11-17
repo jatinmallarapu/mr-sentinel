@@ -1,0 +1,22 @@
+# Keep review and completion endpoints on internal services.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-api
+spec:
+  selector:
+    app: {{ .Release.Name }}-api
+  ports:
+    - {name: http, port: 8000, targetPort: 8000}
+{{- if .Values.vllm.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-vllm
+spec:
+  selector:
+    app: {{ .Release.Name }}-vllm
+  ports:
+    - {name: http, port: 8000, targetPort: 8000}
+{{- end }}

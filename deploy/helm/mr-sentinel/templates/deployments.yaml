@@ -1,0 +1,87 @@
+# The gateway has independent probes and resource requests for CPU autoscaling.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  config.yaml: |
+    engine: {{ .Values.api.engine }}
+    model: {{ .Values.api.model | quote }}
+    base_url: {{ if .Values.vllm.enabled }}http://{{ .Release.Name }}-vllm:8000/v1{{ else }}{{ .Values.api.upstream | quote }}{{ end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-api
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-api
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-api
+    spec:
+      containers:
+        - name: api
+          image: {{ .Values.image | quote }}
+          ports: [{containerPort: 8000}]
+          env:
+            - {name: SENTINEL_CONFIG, value: /settings/config.yaml}
+          {{- if .Values.webhookSecretName }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.webhookSecretName }}
+          {{- end }}
+          readinessProbe:
+            httpGet: {path: /health, port: 8000}
+          livenessProbe:
+            httpGet: {path: /health, port: 8000}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 1, memory: 512Mi}
+          volumeMounts:
+            - {name: settings, mountPath: /settings, readOnly: true}
+      volumes:
+        - name: settings
+          configMap:
+            name: {{ .Release.Name }}-config
+{{- if .Values.vllm.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-vllm
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-vllm
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-vllm
+    spec:
+      containers:
+        - name: vllm
+          image: {{ .Values.vllm.image | quote }}
+          args: ["--model", {{ .Values.api.model | quote }}, "--max-model-len",
+                 {{ .Values.vllm.maxModelLength | toString | quote }}, "--gpu-memory-utilization",
+                 {{ .Values.vllm.gpuMemoryUtilization | quote }}]
+          ports: [{containerPort: 8000}]
+          startupProbe:
+            httpGet: {path: /health, port: 8000}
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: {path: /health, port: 8000}
+          livenessProbe:
+            httpGet: {path: /health, port: 8000}
+            failureThreshold: 5
+          resources:
+            requests: {cpu: 2, memory: 8Gi, nvidia.com/gpu: 1}
+            limits: {cpu: 4, memory: 16Gi, nvidia.com/gpu: 1}
+{{- end }}

@@ -1,0 +1,6 @@
+# Helm tracks the gateway and its optional GPU backend as one release.
+apiVersion: v2
+name: mr-sentinel
+version: 0.1.0
+appVersion: "0.1.0"
+type: application

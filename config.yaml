@@ -1,0 +1,7 @@
+# Both serving engines use the same role-separated JSON contract.
+engine: vllm
+model: Qwen/Qwen2.5-1.5B-Instruct
+base_url: http://127.0.0.1:8001/v1
+review_timeout_seconds: 90
+risk_threshold: 70
+max_diff_chars: 24000

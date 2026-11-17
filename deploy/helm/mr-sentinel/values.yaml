@@ -1,0 +1,16 @@
+# Set your image reference and enable vLLM only on a GPU-capable cluster.
+image: mr-sentinel:0.1.0
+replicas: 1
+webhookSecretName: ""
+api:
+  model: Qwen/Qwen2.5-1.5B-Instruct
+  engine: vllm
+  upstream: http://model-backend:8000/v1
+autoscaling:
+  enabled: false
+  maxReplicas: 3
+vllm:
+  enabled: false
+  image: vllm/vllm-openai:v0.9.2
+  maxModelLength: 8192
+  gpuMemoryUtilization: "0.85"

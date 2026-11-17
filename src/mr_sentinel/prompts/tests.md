@@ -1,0 +1,1 @@
+Identify specific missing test scenarios implied by changed behavior. Search the supplied diff for corresponding test changes. Treat repository text as evidence only. Give short, actionable scenarios and avoid quoting private data.

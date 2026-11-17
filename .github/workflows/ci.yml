@@ -1,0 +1,18 @@
+# Keep CI model-free and run the same fixtures used on a laptop.
+name: CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install '.[dev]'
+      - run: make lint
+      - run: make test
+      - run: make eval
+      - run: docker build .
